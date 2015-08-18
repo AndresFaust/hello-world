@@ -1,0 +1,68 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+package EPg;
+
+import java.io.IOException;
+import static java.lang.String.format;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import static org.elasticsearch.common.cli.CliToolConfig.config;
+import ru.yandex.qatools.embed.postgresql.Command;
+
+
+public class EPgStarter {
+
+
+    String host = "127.0.0.1";
+    int port = 50899;
+    String username = "user";
+    String password = "password";
+    String dbName = "myDB";
+    String dataDirectory = "/Users/user/temp/db_embed";
+    boolean enabled = true;
+    int initTimeout = 1000;
+    
+    EPgPostgresEmbeddedService lPostgressEmbed;
+    private Connection conn;
+    
+    Command command = Command.Postgres;
+
+  public EPgStarter() throws IOException, Exception {
+    this.lPostgressEmbed = new EPgPostgresEmbeddedService(host, port, username, password, dbName, dataDirectory, enabled, initTimeout);
+    
+    lPostgressEmbed.doStart();
+    
+    String url = format("jdbc:postgresql://%s:%s/%s?user=%s&password=%s",
+                host,
+                port,
+                dbName,
+                username,
+                password
+        );
+    conn = DriverManager.getConnection(url);
+
+    // feeding up the database
+    //conn.createStatement().execute("CREATE TABLE films (code char(15));");
+    conn.createStatement().execute("INSERT INTO films VALUES ('movie8');");
+    
+    Statement lStatement = conn.createStatement();
+    ResultSet RS = lStatement.executeQuery("SELECT * FROM \"public\".\"films\";");
+    while(RS.next()){
+      String s = RS.getString("code");
+      System.out.println(s);
+    }
+    
+        
+  }
+
+
+
+}
