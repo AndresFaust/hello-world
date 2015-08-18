@@ -1,0 +1,69 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+package EPg;
+
+import ru.yandex.qatools.embed.postgresql.PostgresExecutable;
+import ru.yandex.qatools.embed.postgresql.PostgresProcess;
+import ru.yandex.qatools.embed.postgresql.PostgresStarter;
+import ru.yandex.qatools.embed.postgresql.config.PostgresConfig;
+
+import java.io.IOException;
+
+import static ru.yandex.qatools.embed.postgresql.config.AbstractPostgresConfig.*;
+import static ru.yandex.qatools.embed.postgresql.distribution.Version.Main.PRODUCTION;
+import ru.yandex.qatools.embed.service.AbstractEmbeddedService;
+import de.flapdoodle.embed.process.store.StaticArtifactStoreBuilder;
+import ru.yandex.qatools.embed.postgresql.Command;
+
+
+/**
+ * Embedded Postgres server
+ */
+public class EPgPostgresEmbeddedService extends AbstractEmbeddedService{
+
+    protected final String host;
+    protected final int port;
+    protected final String dbName;
+    protected final String username;
+    protected final String password;
+    PostgresProcess process;
+
+    public EPgPostgresEmbeddedService(String host, int port, String username, String password, String dbName) throws IOException {
+        this(host, port, username, password, dbName, null, true, 10000);
+    }
+
+    public EPgPostgresEmbeddedService(String host, int port,
+                                   String username, String password, String dbName,
+                                   String dataDirectory, boolean enabled, int initTimeout) throws IOException {
+        super(dataDirectory, enabled, initTimeout);
+        this.username = username;
+        this.password = password;
+        this.host = host;
+        this.port = port;
+        this.dbName = dbName;
+    }
+    
+    @Override
+    public void doStart() throws Exception {
+        PostgresStarter<PostgresExecutable, PostgresProcess> runtime = PostgresStarter.getDefaultInstance();
+        final PostgresConfig configDb;
+        configDb = new PostgresConfig(PRODUCTION, new Net(host, port), new Storage(dbName, dataDirectory), new Timeout(initTimeout), new Credentials(username, password));
+        
+        PostgresExecutable exec = runtime.prepare(configDb);
+        process = exec.start();
+        StaticArtifactStoreBuilder s = new StaticArtifactStoreBuilder();
+        s.build();
+    }
+
+    @Override
+    public void doStop() throws Exception {
+        if (process != null) {
+            process.stop();
+            process = null;
+        }
+    }
+}
